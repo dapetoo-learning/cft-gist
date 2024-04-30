@@ -1,0 +1,242 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AWS CloudFormation Sample Template LoadBalancer.",
+  "Parameters": {
+    "LoadBalancerName": {
+      "Description": "Enter the LoadBalancerName",
+      "Type": "String",
+      "ConstraintDescription": "Please specify name of the LB"
+    },
+    "Scheme": {
+      "Description": "Enter the Scheme",
+      "Type": "String",
+      "Default": "internal",
+      "AllowedValues": ["internet-facing", "internal"]
+    },
+    "Type": {
+      "Description": "Enter the LoadBalancer Type",
+      "Type": "String",
+      "AllowedValues": ["application", "network"],
+      "ConstraintDescription": "Please select the LoadBalance Type"
+    },
+    "Network": {
+      "Description": "The VPC to attach the EC2 instance",
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "SubnetId1": {
+      "Description": "Subnet to attach the EC2 instances",
+      "Type": "String"
+    },
+    "SubnetId2": {
+      "Description": "Subnet to attach the EC2 instances",
+      "Type": "String"
+    },
+    "SecurityGroup1": {
+      "Description": "SecurityGroup to attach the EC2 instances",
+      "Type": "String"
+    },
+    "SecurityGroup2": {
+      "Description": "SecurityGroup to attach the EC2 instances",
+      "Type": "String"
+    },
+    "TargetGroupName": {
+      "Description": "Enter the Targe Group Name",
+      "Type": "String",
+      "ConstraintDescription": "Please specify name for the Target Group"
+    },
+    "TargetGroupType": {
+      "Description": "Type of target to register with the Target Group",
+      "Type": "String",
+      "Default": "instance",
+      "AllowedValues": ["instance", "ip", "lambda", "alb"]
+    },
+    "HealthCheckPath": {
+      "Type": "String",
+      "Description": "Health check path for the Target Group",
+      "Default": "/health",
+      "AllowedPattern": "^\\/[a-zA-Z0-9-]+$"
+    },
+    "HealthCheckPort": {
+      "Type": "String",
+      "Description": "Health check port for the Target Group",
+      "Default": "80",
+      "AllowedPattern": "^\\d+$"
+    },
+    "HealthCheckProtocol": {
+      "Type": "String",
+      "Description": "Health check protocol for the Target Group",
+      "Default": "HTTP",
+      "AllowedValues": ["HTTP", "HTTPS", "TCP"]
+    },
+    "HealthCheckIntervalSeconds": {
+      "Type": "Number",
+      "Description": "Health check interval in seconds",
+      "Default": 30,
+      "MinValue": 5,
+      "MaxValue": 300
+    },
+    "HealthCheckTimeoutSeconds": {
+      "Type": "Number",
+      "Description": "Health check timeout in seconds",
+      "Default": 5,
+      "MinValue": 2,
+      "MaxValue": 60
+    },
+    "HealthyThresholdCount": {
+      "Type": "Number",
+      "Description": "Number of consecutive health checks to be considered healthy",
+      "Default": 2,
+      "MinValue": 2,
+      "MaxValue": 10
+    },
+    "UnhealthyThresholdCount": {
+      "Type": "Number",
+      "Description": "Number of consecutive health checks to be considered unhealthy",
+      "Default": 2,
+      "MinValue": 2,
+      "MaxValue": 10
+    },
+    "Port": {
+      "Type": "Number",
+      "Description": "Port for the Target Group",
+      "Default": 80,
+      "MinValue": 1,
+      "MaxValue": 65535
+    },
+    "Protocol": {
+      "Type": "String",
+      "Description": "Protocol for the Target Group",
+      "Default": "HTTP",
+      "AllowedValues": ["HTTP", "HTTPS"]
+    },
+    "ListenerPort": {
+        "Type": "Number",
+        "Description": "Port for the Listener",
+        "Default": 80,
+        "MinValue": 1,
+        "MaxValue": 65535
+      },
+      "ListenerProtocol": {
+        "Type": "String",
+        "Description": "Protocol for the Listener",
+        "Default": "HTTP",
+        "AllowedValues": [
+          "HTTP",
+          "HTTPS"
+        ]
+      }
+  },
+  "Metadata": {
+    "SNC::Parameter::Metadata": {
+      "SubnetId1": {
+        "datasource": "ServiceNow::Pools::SubnetPool.getObjectsByNetwork",
+        "datasourceFilter": {
+          "Network": "Network"
+        }
+      },
+      "SubnetId2": {
+        "datasource": "ServiceNow::Pools::SubnetPool.getObjectsByNetwork",
+        "datasourceFilter": {
+          "Network": "Network"
+        }
+      },
+      "Network": {
+        "datasource": "ServiceNow::Pools::NetworkPool.getObjectsByLDC"
+      },
+      "SecurityGroup1": {
+        "datasource": "ServiceNow::Pools::SecurityGroupPool.getObjectsByNetwork",
+        "datasourceFilter": {
+          "Network": "Network"
+        }
+      },
+      "SecurityGroup2": {
+        "datasource": "ServiceNow::Pools::SecurityGroupPool.getObjectsByNetwork",
+        "datasourceFilter": {
+          "Network": "Network"
+        }
+      }
+    }
+  },
+  "Resources": {
+    "LoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": { "Ref": "LoadBalancerName" },
+        "Scheme": { "Ref": "Scheme" },
+        "Subnets": [{ "Ref": "SubnetId1" }, { "Ref": "SubnetId2" }],
+        "Type": { "Ref": "Type" },
+        "SecurityGroups": [
+          { "Ref": "SecurityGroup1" },
+          { "Ref": "SecurityGroup2" }
+        ]
+      }
+    },
+
+    "TargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": { "Ref": "TargetGroupName" },
+        "TargetType": { "Ref": "TargetGroupType" },
+        "VpcId": { "Ref": "Network" },
+        "HealthCheckPath": {
+            "Ref": "HealthCheckPath"
+          },
+          "HealthCheckPort": {
+            "Ref": "HealthCheckPort"
+          },
+          "HealthCheckProtocol": {
+            "Ref": "HealthCheckProtocol"
+          },
+          "HealthCheckIntervalSeconds": {
+            "Ref": "HealthCheckIntervalSeconds"
+          },
+          "HealthCheckTimeoutSeconds": {
+            "Ref": "HealthCheckTimeoutSeconds"
+          },
+          "HealthyThresholdCount": {
+            "Ref": "HealthyThresholdCount"
+          },
+          "UnhealthyThresholdCount": {
+            "Ref": "UnhealthyThresholdCount"
+          },
+          "Port": {
+            "Ref": "Port"
+          },
+          "Protocol": {
+            "Ref": "Protocol"
+          }
+      }
+    },
+
+    "Listener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "TargetGroup"
+            }
+          }
+        ],
+        "LoadBalancerArn": {
+          "Ref": "LoadBalancer"
+        },
+        "Port": {
+          "Ref": "ListenerPort"
+        },
+        "Protocol": {
+          "Ref": "ListenerProtocol"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "ELBDNSName": {
+      "Description": "DNS name of the Elastic Load Balancer",
+      "Value": {
+        "Fn::GetAtt": ["LoadBalancer", "DNSName"]
+      }
+    }
+  }
+}
