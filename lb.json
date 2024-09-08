@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "AWS CloudFormation Sample Template LoadBalancer.",
+  "Description": "AWS CloudFormation Template LoadBalancer.",
   "Parameters": {
     "LoadBalancerName": {
       "Description": "Enter the LoadBalancerName",
@@ -35,10 +35,6 @@
       "Description": "SecurityGroup to attach the EC2 instances",
       "Type": "String"
     },
-    "SecurityGroup2": {
-      "Description": "SecurityGroup to attach the EC2 instances",
-      "Type": "String"
-    },
     "TargetGroupName": {
       "Description": "Enter the Targe Group Name",
       "Type": "String",
@@ -50,22 +46,41 @@
       "Default": "instance",
       "AllowedValues": ["instance", "ip", "lambda", "alb"]
     },
+    "InstanceID": {
+      "Description": "If the target type of the target group is instance, specify an instance ID.",
+      "Type": "String"
+    },
+    "InstanceID2": {
+      "Type": "String",
+      "Description": "The ID of the second instance (optional).",
+      "Default": ""
+    },
+    "InstanceID3": {
+      "Type": "String",
+      "Description": "The ID of the third instance (optional).",
+      "Default": ""
+    },
+    "InstanceID4": {
+      "Type": "String",
+      "Description": "The ID of the fourth instance (optional).",
+      "Default": ""
+    },
     "HealthCheckPath": {
       "Type": "String",
       "Description": "Health check path for the Target Group",
-      "Default": "/health",
-      "AllowedPattern": "^\\/[a-zA-Z0-9-]+$"
+      "Default": "/",
+      "AllowedPattern": "[/a-zA-Z0-9-.]+$"
     },
     "HealthCheckPort": {
       "Type": "String",
       "Description": "Health check port for the Target Group",
-      "Default": "80",
+      "Default": "443",
       "AllowedPattern": "^\\d+$"
     },
     "HealthCheckProtocol": {
       "Type": "String",
       "Description": "Health check protocol for the Target Group",
-      "Default": "HTTP",
+      "Default": "HTTPS",
       "AllowedValues": ["HTTP", "HTTPS", "TCP"]
     },
     "HealthCheckIntervalSeconds": {
@@ -99,32 +114,261 @@
     "Port": {
       "Type": "Number",
       "Description": "Port for the Target Group",
-      "Default": 80,
+      "Default": 443,
       "MinValue": 1,
       "MaxValue": 65535
     },
     "Protocol": {
       "Type": "String",
       "Description": "Protocol for the Target Group",
-      "Default": "HTTP",
+      "Default": "HTTPS",
       "AllowedValues": ["HTTP", "HTTPS"]
     },
     "ListenerPort": {
-        "Type": "Number",
-        "Description": "Port for the Listener",
-        "Default": 80,
-        "MinValue": 1,
-        "MaxValue": 65535
-      },
-      "ListenerProtocol": {
-        "Type": "String",
-        "Description": "Protocol for the Listener",
-        "Default": "HTTP",
-        "AllowedValues": [
-          "HTTP",
-          "HTTPS"
-        ]
-      }
+      "Type": "Number",
+      "Description": "Port for the Listener",
+      "Default": 443,
+      "MinValue": 1,
+      "MaxValue": 65535
+    },
+    "ListenerProtocol": {
+      "Type": "String",
+      "Description": "Protocol for the Listener",
+      "Default": "HTTPS",
+      "AllowedValues": ["HTTP", "HTTPS", "TCP", "TLS", "UDP", "TCP-UDP"]
+    },
+    "CertificateARN": {
+      "Type": "String",
+      "Description": "ARN for the ACM certificate to be used with the listener."
+    },
+    "TagKey1": {
+      "Type": "String",
+      "Description": "Key for the first tag",
+      "Default": "AppName"
+    },
+    "TagValue1": {
+      "Type": "String",
+      "Description": "Value for the first tag",
+      "Default": ""
+    },
+    "TagKey2": {
+      "Type": "String",
+      "Description": "Key for the second tag",
+      "Default": ""
+    },
+    "TagValue2": {
+      "Type": "String",
+      "Description": "Value for the second tag",
+      "Default": ""
+    },
+    "TagKey3": {
+      "Type": "String",
+      "Description": "Key for the third tag",
+      "Default": ""
+    },
+    "TagValue3": {
+      "Type": "String",
+      "Description": "Value for the third tag",
+      "Default": ""
+    },
+    "TagKey4": {
+      "Type": "String",
+      "Description": "Key for the fourth tag",
+      "Default": ""
+    },
+    "TagValue4": {
+      "Type": "String",
+      "Description": "Value for the fourth tag",
+      "Default": ""
+    },
+    "TagKey5": {
+      "Type": "String",
+      "Description": "Key for the fifth tag",
+      "Default": ""
+    },
+    "TagValue5": {
+      "Type": "String",
+      "Description": "Value for the fifth tag",
+      "Default": ""
+    }
+  },
+  "Conditions": {
+    "NoCertificateRequired": {
+      "Fn::And": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "CertificateARN"
+            },
+            ""
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ListenerProtocol"
+            },
+            "HTTP"
+          ]
+        }
+      ]
+    },
+    "HasTagKey1": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagKey1"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagValue1": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagValue1"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagKey2": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagKey2"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagValue2": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagValue2"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagKey3": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagKey3"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagValue3": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagValue3"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagKey4": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagKey4"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagValue4": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagValue4"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagKey5": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagKey5"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasTagValue5": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "TagValue5"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasInstanceID2": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "InstanceID2"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasInstanceID3": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "InstanceID3"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasInstanceID4": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "InstanceID4"
+            },
+            ""
+          ]
+        }
+      ]
+    }
   },
   "Metadata": {
     "SNC::Parameter::Metadata": {
@@ -135,7 +379,7 @@
         }
       },
       "SubnetId2": {
-        "datasource": "ServiceNow::Pools::SubnetPool.getObjectsByNetwork",
+        "datasource": "ServiceNow::Pools::SubnetPool.getObjectsByNetwork2",
         "datasourceFilter": {
           "Network": "Network"
         }
@@ -154,6 +398,18 @@
         "datasourceFilter": {
           "Network": "Network"
         }
+      },
+      "InstanceID": {
+        "datasource": "ServiceNow::Pools::VirtualMachinePool.getObjectIDbyNetwork"
+      },
+      "InstanceID2": {
+        "datasource": "ServiceNow::Pools::VirtualMachinePool.getObjectByIdNetworkNoDuplicate"
+      },
+      "InstanceID3": {
+        "datasource": "ServiceNow::Pools::VirtualMachinePool.getObjectByIdNetworkNoDuplicate"
+      },
+      "InstanceID4": {
+        "datasource": "ServiceNow::Pools::VirtualMachinePool.getObjectByIdNetworkNoDuplicate"
       }
     }
   },
@@ -161,53 +417,235 @@
     "LoadBalancer": {
       "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
       "Properties": {
-        "Name": { "Ref": "LoadBalancerName" },
-        "Scheme": { "Ref": "Scheme" },
-        "Subnets": [{ "Ref": "SubnetId1" }, { "Ref": "SubnetId2" }],
-        "Type": { "Ref": "Type" },
+        "Name": {
+          "Ref": "LoadBalancerName"
+        },
+        "Scheme": {
+          "Ref": "Scheme"
+        },
+        "Subnets": [
+          {
+            "Ref": "SubnetId1"
+          },
+          {
+            "Ref": "SubnetId2"
+          }
+        ],
+        "Type": {
+          "Ref": "Type"
+        },
         "SecurityGroups": [
-          { "Ref": "SecurityGroup1" },
-          { "Ref": "SecurityGroup2" }
+          {
+            "Ref": "SecurityGroup1"
+          }
+        ],
+        "LoadBalancerAttributes": [
+          {
+            "Key": "load_balancing.cross_zone.enabled",
+            "Value": true
+          }
+        ],
+        "Tags": [
+          {
+            "Fn::If": [
+              "HasTagKey1",
+              {
+                "Key": {
+                  "Ref": "TagKey1"
+                },
+                "Value": {
+                  "Fn::If": [
+                    "HasTagValue1",
+                    {
+                      "Ref": "TagValue1"
+                    },
+                    ""
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          },
+          {
+            "Fn::If": [
+              "HasTagKey2",
+              {
+                "Key": {
+                  "Ref": "TagKey2"
+                },
+                "Value": {
+                  "Fn::If": [
+                    "HasTagValue2",
+                    {
+                      "Ref": "TagValue2"
+                    },
+                    ""
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          },
+          {
+            "Fn::If": [
+              "HasTagKey3",
+              {
+                "Key": {
+                  "Ref": "TagKey3"
+                },
+                "Value": {
+                  "Fn::If": [
+                    "HasTagValue3",
+                    {
+                      "Ref": "TagValue3"
+                    },
+                    ""
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          },
+          {
+            "Fn::If": [
+              "HasTagKey4",
+              {
+                "Key": {
+                  "Ref": "TagKey4"
+                },
+                "Value": {
+                  "Fn::If": [
+                    "HasTagValue4",
+                    {
+                      "Ref": "TagValue4"
+                    },
+                    ""
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          },
+          {
+            "Fn::If": [
+              "HasTagKey5",
+              {
+                "Key": {
+                  "Ref": "TagKey5"
+                },
+                "Value": {
+                  "Fn::If": [
+                    "HasTagValue5",
+                    {
+                      "Ref": "TagValue5"
+                    },
+                    ""
+                  ]
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
+          }
         ]
       }
     },
-
     "TargetGroup": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
-        "Name": { "Ref": "TargetGroupName" },
-        "TargetType": { "Ref": "TargetGroupType" },
-        "VpcId": { "Ref": "Network" },
-        "HealthCheckPath": {
-            "Ref": "HealthCheckPath"
+        "Name": {
+          "Ref": "TargetGroupName"
+        },
+        "TargetType": {
+          "Ref": "TargetGroupType"
+        },
+        "Targets": [
+          {
+            "Id": {
+              "Ref": "InstanceID"
+            }
           },
-          "HealthCheckPort": {
-            "Ref": "HealthCheckPort"
+          {
+            "Fn::If": [
+              "HasInstanceID2",
+              {
+                "Id": {
+                  "Ref": "InstanceID2"
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
           },
-          "HealthCheckProtocol": {
-            "Ref": "HealthCheckProtocol"
+          {
+            "Fn::If": [
+              "HasInstanceID3",
+              {
+                "Id": {
+                  "Ref": "InstanceID3"
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
           },
-          "HealthCheckIntervalSeconds": {
-            "Ref": "HealthCheckIntervalSeconds"
-          },
-          "HealthCheckTimeoutSeconds": {
-            "Ref": "HealthCheckTimeoutSeconds"
-          },
-          "HealthyThresholdCount": {
-            "Ref": "HealthyThresholdCount"
-          },
-          "UnhealthyThresholdCount": {
-            "Ref": "UnhealthyThresholdCount"
-          },
-          "Port": {
-            "Ref": "Port"
-          },
-          "Protocol": {
-            "Ref": "Protocol"
+          {
+            "Fn::If": [
+              "HasInstanceID4",
+              {
+                "Id": {
+                  "Ref": "InstanceID4"
+                }
+              },
+              {
+                "Ref": "AWS::NoValue"
+              }
+            ]
           }
+        ],
+        "VpcId": {
+          "Ref": "Network"
+        },
+        "HealthCheckPath": {
+          "Ref": "HealthCheckPath"
+        },
+        "HealthCheckPort": {
+          "Ref": "HealthCheckPort"
+        },
+        "HealthCheckProtocol": {
+          "Ref": "HealthCheckProtocol"
+        },
+        "HealthCheckIntervalSeconds": {
+          "Ref": "HealthCheckIntervalSeconds"
+        },
+        "HealthCheckTimeoutSeconds": {
+          "Ref": "HealthCheckTimeoutSeconds"
+        },
+        "HealthyThresholdCount": {
+          "Ref": "HealthyThresholdCount"
+        },
+        "UnhealthyThresholdCount": {
+          "Ref": "UnhealthyThresholdCount"
+        },
+        "Port": {
+          "Ref": "Port"
+        },
+        "Protocol": {
+          "Ref": "Protocol"
+        }
       }
     },
-
     "Listener": {
       "Type": "AWS::ElasticLoadBalancingV2::Listener",
       "Properties": {
@@ -222,6 +660,19 @@
         "LoadBalancerArn": {
           "Ref": "LoadBalancer"
         },
+        "Certificates": [
+          {
+            "Fn::If": [
+              "NoCertificateRequired",
+              {
+                "Ref": "AWS::NoValue"
+              },
+              {
+                "Ref": "CertificateARN"
+              }
+            ]
+          }
+        ],
         "Port": {
           "Ref": "ListenerPort"
         },

@@ -1,0 +1,162 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CloudFormation template for RDS database provisioning with dynamic parameters",
+    "Parameters": {
+  "DBInstanceIdentifier": {
+    "Type": "String",
+    "Description": "The DB instance identifier",
+    "Default": ""
+  },
+  "DBName": {
+    "Type": "String",
+    "Description": "The name of the database to create",
+    "Default": ""
+  },
+  "DBEngine": {
+    "Type": "String",
+    "Description": "The database engine to use",
+    "Default": "",
+    "AllowedValues": ["mysql", "postgres", "oracle-ee", "sqlserver-ee"]
+  },
+  "DBEngineVersion": {
+    "Type": "String",
+    "Description": "The version of the database engine",
+    "Default": ""
+  },
+  "DBInstanceClass": {
+    "Type": "String",
+    "Description": "The compute and memory capacity of the DB instance",
+    "Default": "",
+    "AllowedValues": ["db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large", "db.t3.micro", "db.t3.small", "db.t3.medium", "db.t3.large", "db.r5.large", "db.r5.xlarge", "db.r5.2xlarge", "db.r5.4xlarge", "db.r5.12xlarge", "db.r5.24xlarge"]
+  },
+  "DBAllocatedStorage": {
+    "Type": "Number",
+    "Description": "The allocated storage size in gigabytes (GB)",
+    "Default": "",
+    "MinValue": "20",
+    "MaxValue": "65536"
+  },
+  "DBStorageType": {
+    "Type": "String",
+    "Description": "The storage type for the DB instance",
+    "Default": "",
+    "AllowedValues": ["gp2", "gp3", "io1"]
+  },
+  "DBIops": {
+    "Type": "Number",
+    "Description": "The number of I/O operations per second (IOPS)",
+    "Default": "",
+    "MinValue": "1000",
+    "MaxValue": "80000"
+  },
+  "DBMasterUsername": {
+    "Type": "String",
+    "Description": "The master username for the DB instance",
+    "Default": "",
+    "NoEcho": true
+  },
+  "DBMasterUserPassword": {
+    "Type": "String",
+    "Description": "The master password for the DB instance",
+    "Default": "",
+    "NoEcho": true
+  },
+  "DBMultiAZ": {
+    "Type": "String",
+    "Description": "Specifies if the database instance is multi-AZ",
+    "Default": "",
+    "AllowedValues": ["true", "false"]
+  },
+  "DBBackupRetentionPeriod": {
+    "Type": "Number",
+    "Description": "The number of days to retain automated backups",
+    "Default": "",
+    "MinValue": "0",
+    "MaxValue": "35"
+  },
+  "DBEncrypted": {
+    "Type": "String",
+    "Description": "Specifies whether the DB instance is encrypted",
+    "Default": "",
+    "AllowedValues": ["true", "false"]
+  },
+  "DBPort": {
+    "Type": "Number",
+    "Description": "The port number on which the database accepts connections",
+    "Default": ""
+  },
+  "DBSubnetGroupName": {
+    "Type": "String",
+    "Description": "The name of the DB subnet group",
+    "Default": ""
+  },
+  "VPCSecurityGroups": {
+    "Type": "CommaDelimitedList",
+    "Description": "A list of VPC security group IDs",
+    "Default": ""
+  },
+  "DBParameterGroupName": {
+    "Type": "String",
+    "Description": "The name of the DB parameter group",
+    "Default": ""
+  },
+  "MonitoringInterval": {
+    "Type": "Number",
+    "Description": "The interval, in seconds, between points when Enhanced Monitoring metrics are collected",
+    "Default": "",
+    "AllowedValues": [0, 1, 5, 10, 15, 30, 60]
+  },
+  "PerformanceInsightsEnabled": {
+    "Type": "String",
+    "Description": "Specifies whether Performance Insights is enabled",
+    "Default": "",
+    "AllowedValues": ["true", "false"]
+  },
+  "PerformanceInsightsRetentionPeriod": {
+    "Type": "Number",
+    "Description": "The amount of time, in days, to retain Performance Insights data",
+    "Default": "",
+    "AllowedValues": [7, 731]
+  }
+},
+    "Resources": {
+      "MyDBInstance": {
+        "Type": "AWS::RDS::DBInstance",
+        "Properties": {
+          "DBInstanceIdentifier": {"Ref": "DBInstanceIdentifier"},
+          "DBName": {"Ref": "DBName"},
+          "Engine": {"Ref": "DBEngine"},
+          "EngineVersion": {"Ref": "DBEngineVersion"},
+          "DBInstanceClass": {"Ref": "DBInstanceClass"},
+          "AllocatedStorage": {"Ref": "DBAllocatedStorage"},
+          "StorageType": {"Ref": "DBStorageType"},
+          "Iops": {"Ref": "DBIops"},
+          "MasterUsername": {"Ref": "DBMasterUsername"},
+          "MasterUserPassword": {"Ref": "DBMasterUserPassword"},
+          "MultiAZ": {"Ref": "DBMultiAZ"},
+          "BackupRetentionPeriod": {"Ref": "DBBackupRetentionPeriod"},
+          "StorageEncrypted": {"Ref": "DBEncrypted"},
+          "Port": {"Ref": "DBPort"},
+          "DBSubnetGroupName": {"Ref": "DBSubnetGroupName"},
+          "VPCSecurityGroups": {"Ref": "VPCSecurityGroups"},
+          "DBParameterGroupName": {"Ref": "DBParameterGroupName"},
+          "MonitoringInterval": {"Ref": "MonitoringInterval"},
+          "EnablePerformanceInsights": {"Ref": "PerformanceInsightsEnabled"},
+          "PerformanceInsightsRetentionPeriod": {"Ref": "PerformanceInsightsRetentionPeriod"},
+          "PubliclyAccessible": false,
+          "CopyTagsToSnapshot": true,
+          "DeletionProtection": true
+        }
+      }
+    },
+    "Outputs": {
+      "DBInstanceEndpoint": {
+        "Description": "The connection endpoint for the database",
+        "Value": {"Fn::GetAtt": ["MyDBInstance", "Endpoint.Address"]}
+      },
+      "DBInstancePort": {
+        "Description": "The port number on which the database accepts connections",
+        "Value": {"Fn::GetAtt": ["MyDBInstance", "Endpoint.Port"]}
+      }
+    }
+  }

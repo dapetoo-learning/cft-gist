@@ -1,0 +1,437 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CloudFormation Template to create an S3 bucket with policy, and encryption configurations.",
+    "Parameters": {
+      "BucketName": {
+        "Type": "String",
+        "Description": "The name of the S3 bucket",
+        "AllowedPattern": "^[a-z0-9.-]{3,63}$",
+        "ConstraintDescription": "Bucket name must consist of lowercase letters, numbers, hyphens, and periods, and must be between 3 and 63 characters."
+      },
+      "BucketVersioning": {
+        "Type": "String",
+        "Default": "Enabled",
+        "AllowedValues": [
+          "Enabled",
+          "Suspended"
+        ],
+        "Description": "Enable or disable versioning for the S3 bucket."
+      },
+      "EncryptionType": {
+        "Type": "String",
+        "Default": "SSE-S3",
+        "AllowedValues": [
+          "SSE-KMS",
+          "SSE-S3"
+        ],
+        "Description": "Type of encryption to use for the S3 bucket."
+      },
+      "KMSKeyArn": {
+        "Type": "String",
+        "Description": "ARN of the KMS key to use for server-side encryption (required if using SSE-KMS).",
+        "Default": ""
+      },
+      "ReadAccessARN": {
+        "Type": "CommaDelimitedList",
+        "Description": "List of AWS IAM ARNs that have read access to the bucket"
+      },
+      "WriteAccessARN": {
+        "Type": "CommaDelimitedList",
+        "Description": "List of AWS IAM ARNs that have write access to the bucket"
+      },
+      "TagKey1": {
+        "Type": "String",
+        "Description": "Key for the first tag",
+        "Default": "AppName"
+      },
+      "TagValue1": {
+        "Type": "String",
+        "Description": "Value for the first tag",
+        "Default": ""
+      },
+      "TagKey2": {
+        "Type": "String",
+        "Description": "Key for the second tag",
+        "Default": ""
+      },
+      "TagValue2": {
+        "Type": "String",
+        "Description": "Value for the second tag",
+        "Default": ""
+      },
+      "TagKey3": {
+        "Type": "String",
+        "Description": "Key for the third tag",
+        "Default": ""
+      },
+      "TagValue3": {
+        "Type": "String",
+        "Description": "Value for the third tag",
+        "Default": ""
+      },
+      "TagKey4": {
+        "Type": "String",
+        "Description": "Key for the fourth tag",
+        "Default": ""
+      },
+      "TagValue4": {
+        "Type": "String",
+        "Description": "Value for the fourth tag",
+        "Default": ""
+      },
+      "TagKey5": {
+        "Type": "String",
+        "Description": "Key for the fifth tag",
+        "Default": ""
+      },
+      "TagValue5": {
+        "Type": "String",
+        "Description": "Value for the fifth tag",
+        "Default": ""
+      }
+    },
+    "Conditions": {
+      "UseSSEKMS": {
+        "Fn::Equals": [
+          {
+            "Ref": "EncryptionType"
+          },
+          "SSE-KMS"
+        ]
+      },
+      "HasTagKey1": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagKey1"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagValue1": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagValue1"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagKey2": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagKey2"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagValue2": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagValue2"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagKey3": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagKey3"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagValue3": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagValue3"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagKey4": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagKey4"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagValue4": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagValue4"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagKey5": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagKey5"
+              },
+              ""
+            ]
+          }
+        ]
+      },
+      "HasTagValue5": {
+        "Fn::Not": [
+          {
+            "Fn::Equals": [
+              {
+                "Ref": "TagValue5"
+              },
+              ""
+            ]
+          }
+        ]
+      }
+    },
+    "Resources": {
+      "S3Bucket": {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+          "BucketName": {
+            "Fn::Sub": "gms-${BucketName}"
+          },
+          "VersioningConfiguration": {
+            "Status": {
+              "Ref": "BucketVersioning"
+            }
+          },
+          "BucketEncryption": {
+            "ServerSideEncryptionConfiguration": [
+              {
+                "ServerSideEncryptionByDefault": {
+                  "SSEAlgorithm": {
+                    "Fn::If": [
+                      "UseSSEKMS",
+                      "aws:kms",
+                      "AES256"
+                    ]
+                  },
+                  "KMSMasterKeyID": {
+                    "Fn::If": [
+                      "UseSSEKMS",
+                      {
+                        "Ref": "KMSKeyArn"
+                      },
+                      {
+                        "Ref": "AWS::NoValue"
+                      }
+                    ]
+                  }
+                },
+                "BucketKeyEnabled": {
+                  "Fn::If": [
+                    "UseSSEKMS",
+                    true,
+                    false
+                  ]
+                }
+              }
+            ]
+          },
+          "Tags": [
+            {
+              "Fn::If": [
+                "HasTagKey1",
+                {
+                  "Key": {
+                    "Ref": "TagKey1"
+                  },
+                  "Value": {
+                    "Fn::If": [
+                      "HasTagValue1",
+                      {
+                        "Ref": "TagValue1"
+                      },
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "HasTagKey2",
+                {
+                  "Key": {
+                    "Ref": "TagKey2"
+                  },
+                  "Value": {
+                    "Fn::If": [
+                      "HasTagValue2",
+                      {
+                        "Ref": "TagValue2"
+                      },
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "HasTagKey3",
+                {
+                  "Key": {
+                    "Ref": "TagKey3"
+                  },
+                  "Value": {
+                    "Fn::If": [
+                      "HasTagValue3",
+                      {
+                        "Ref": "TagValue3"
+                      },
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "HasTagKey4",
+                {
+                  "Key": {
+                    "Ref": "TagKey4"
+                  },
+                  "Value": {
+                    "Fn::If": [
+                      "HasTagValue4",
+                      {
+                        "Ref": "TagValue4"
+                      },
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            },
+            {
+              "Fn::If": [
+                "HasTagKey5",
+                {
+                  "Key": {
+                    "Ref": "TagKey5"
+                  },
+                  "Value": {
+                    "Fn::If": [
+                      "HasTagValue5",
+                      {
+                        "Ref": "TagValue5"
+                      },
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "S3BucketPolicy": {
+        "Type": "AWS::S3::BucketPolicy",
+        "Properties": {
+          "Bucket": {
+            "Ref": "S3Bucket"
+          },
+          "PolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Sid": "ReadPolicy",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": {
+                    "Ref": "ReadAccessARN"
+                  }
+                },
+                "Action": "s3:GetObject",
+                "Resource": {
+                  "Fn::Sub": "arn:aws:s3:::${S3Bucket}/*"
+                }
+              },
+              {
+                "Sid": "WritePolicy",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": {
+                    "Ref": "WriteAccessARN"
+                  }
+                },
+                "Action": [
+                  "s3:PutObject",
+                  "s3:PutObjectAcl",
+                  "s3:GetObject",
+                  "s3:GetObjectVersion",
+                  "s3:DeleteObject",
+                  "s3:DeleteObjectVersion",
+                  "s3:ListBucketMultipartUploads",
+                  "s3:ListMultipartUploadParts",
+                  "s3:AbortMultipartUpload"
+                ],
+                "Resource": [
+                  {
+                    "Fn::Sub": "arn:aws:s3:::${S3Bucket}"
+                  },
+                  {
+                    "Fn::Sub": "arn:aws:s3:::${S3Bucket}/*"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  }

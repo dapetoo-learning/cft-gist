@@ -1,0 +1,197 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template to create an S3 bucket and policy",
+  "Parameters": {
+    "BucketName": {
+      "Type": "String",
+      "Description": "The name of the S3 bucket"
+    },
+    "BucketVersioning": {
+      "Type": "String",
+      "Default": "Disabled",
+      "AllowedValues": ["Enabled", "Disabled"],
+      "Description": "Enable or disable versioning for the S3 bucket."
+    },
+    "EncryptionType": {
+      "Type": "String",
+      "Default": "SSE-KMS",
+      "AllowedValues": ["SSE-KMS", "SSE-S3"],
+      "Description": "Type of encryption to use for the S3 bucket."
+    },
+    "KMSKeyArn": {
+      "Type": "String",
+      "Description": "ARN of the KMS key to use for server-side encryption (required if using SSE-KMS)."
+    },
+    "BucketLoggingEnabled": {
+      "Type": "String",
+      "Default": "No",
+      "AllowedValues": ["Yes", "No"],
+      "Description": "Enable or disable logging for the S3 bucket."
+    },
+    "LoggingBucketName": {
+      "Type": "String",
+      "Description": "Name of the S3 bucket to store logs if logging is enabled.",
+      "Default": ""
+    },
+    "ReadAccess": {
+      "Type": "CommaDelimitedList",
+      "Description": "List of AWS IAM ARNs that have read access to the bucket"
+    },
+    "WriteAccess": {
+      "Type": "CommaDelimitedList",
+      "Description": "List of AWS IAM ARNs that have write access to the bucket"
+    }
+  },
+  "Resources": {
+    "S3Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Ref": "BucketName"
+        },
+        "VersioningConfiguration": {
+          "Status": {
+            "Ref": "BucketVersioning"
+          }
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": {
+                  "Fn::If": ["UseSSEKMS", "aws:kms", "AES256"]
+                },
+                "KMSMasterKeyID": {
+                  "Fn::If": [
+                    "UseSSEKMS",
+                    {
+                      "Ref": "KMSKeyArn"
+                    },
+                    { "Ref": "AWS::NoValue" }
+                  ]
+                }
+              },
+              "BucketKeyEnabled": {
+                "Fn::If": ["UseSSEKMS", true, false]
+              }
+            }
+          ]
+        },
+        "LoggingConfiguration": {
+          "DestinationBucketName": {
+            "Fn::If": [
+              "IsLoggingEnabled",
+              {
+                "Ref": "LoggingBucketName"
+              },
+              { "Ref": "AWS::NoValue" }
+            ]
+          },
+          "LogFilePrefix": {
+            "Fn::If": ["IsLoggingEnabled", "logs/", { "Ref": "AWS::NoValue" }]
+          }
+        }
+      }
+    }
+  },
+  "S3BucketPolicy": {
+    "Type": "AWS::S3::BucketPolicy",
+    "Properties": {
+      "Bucket": {
+        "Ref": "S3Bucket"
+      },
+      "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Sid": "ListBucket",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": {
+                "Fn::Join": [
+                  ",",
+                  {
+                    "Ref": "ReadAccess"
+                  }
+                ]
+              }
+            },
+            "Action": "s3:ListBucket",
+            "Resource": {
+              "Fn::Sub": "arn:aws:s3:::${S3Bucket}"
+            }
+          },
+          {
+            "Sid": "ReadPolicy",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": {
+                "Fn::Join": [
+                  ",",
+                  {
+                    "Ref": "ReadAccess"
+                  }
+                ]
+              }
+            },
+            "Action": "s3:GetObject",
+            "Resource": {
+              "Fn::Sub": "arn:aws:s3:::${S3Bucket}/*"
+            }
+          },
+          {
+            "Sid": "WritePolicy",
+            "Effect": "Allow",
+            "Principal": {
+              "AWS": {
+                "Fn::Join": [
+                  ",",
+                  {
+                    "Ref": "WriteAccess"
+                  }
+                ]
+              }
+            },
+            "Action": [
+              "s3:PutObject",
+              "s3:PutObjectAcl",
+              "s3:GetObject",
+              "s3:GetObjectVersion",
+              "s3:DeleteObject",
+              "s3:DeleteObjectVersion",
+              "s3:ListBucketMultipartUploads",
+              "s3:ListMultipartUploadParts",
+              "s3:AbortMultipartUpload"
+            ],
+            "Resource": [
+              {
+                "Fn::Sub": "arn:aws:s3:::${S3Bucket}"
+              },
+              {
+                "Fn::Sub": "arn:aws:s3:::${S3Bucket}/*"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Conditions": {
+    "UseSSEKMS": {
+      "Fn::Equals": [
+        {
+          "Ref": "EncryptionType"
+        },
+        "SSE-KMS"
+      ]
+    },
+    "IsLoggingEnabled": {
+      "Fn::Equals": [
+        {
+          "Ref": "BucketLoggingEnabled"
+        },
+        "Yes"
+      ]
+    }
+  }
+}
